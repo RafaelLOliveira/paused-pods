@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overprovisioning-autoscaler
+  namespace: hpa
+  labels:
+    app: overprovisioning-autoscaler
+spec:
+  selector:
+    matchLabels:
+      app: overprovisioning-autoscaler
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: overprovisioning-autoscaler
+    spec:
+      serviceAccountName: cluster-proportional-autoscaler-service-account
+      containers:
+        - name: autoscaler
+          ##troquei k8s.gcr.io por registry.k8s.io
+          image: registry.k8s.io/cluster-proportional-autoscaler-amd64:1.8.1
+          command:
+            - /cluster-proportional-autoscaler
+            - --namespace=hpa
+            - --configmap=overprovisioning-autoscaler-v2
+            #- --default-params={"linear":{"nodesPerReplica":1}}
+            - --target=deployment/overprovisioning
+            - --logtostderr=true
+            - --nodelabels=ibm-cloud.kubernetes.io/worker-pool-name=hpa
+            - --v=2
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "15Mi"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: use
+                    operator: In
+                    values:
+                      - autoscale
+
+      # nodeSelector:
+      #   ibm-cloud.kubernetes.io/worker-pool-name: autoscaler
+## tem que adicionar o label 'ibm-cloud.kubernetes.io/worker-pool-name=hpa' na worker pool

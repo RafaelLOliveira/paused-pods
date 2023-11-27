@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overprovisioning
+  namespace: hpa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: overprovisioning
+  template:
+    metadata:
+      labels:
+        run: overprovisioning
+    spec:
+      priorityClassName: overprovisioning
+      containers:
+        - name: reserve-resources
+          image: k8s.gcr.io/pause
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: use
+                    operator: In
+                    values:
+                      - autoscale
+      # nodeSelector:
+      #   ibm-cloud.kubernetes.io/worker-pool-name: autoscaler

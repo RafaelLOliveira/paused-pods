@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teste-app
+  namespace: hpa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: teste-app
+  template:
+    metadata:
+      labels:
+        run: teste-app
+    spec:
+      containers:
+        - name: app-teste
+          image: nginxinc/nginx-unprivileged
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: use
+                    operator: In
+                    values:
+                      - autoscale
+      # nodeSelector:
+      #   ibm-cloud.kubernetes.io/worker-pool-name: autoscaler
